@@ -1,6 +1,6 @@
 pandas
-plotly.express
+plotly
 numpy
-matplotlib.pyplot
+matplotlib
 seaborn
-scipy.stats
+scipy
