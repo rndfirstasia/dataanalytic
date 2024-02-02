@@ -9,7 +9,15 @@ import scipy.stats as stats
 #Layout
 st.set_page_config(page_title="Data Analytic", page_icon="icon.png")
 
-df = pd.read_excel('/mount/src/dataanalytic/data.xlsx')
+#df = pd.read_excel('data.xlsx')
+
+# File upload widget in Streamlit
+uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'])
+
+if uploaded_file is not None:
+    df = pd.read_excel(uploaded_file)
+    # Now you can use the DataFrame 'df' as needed
+    st.write(df)
 
 #Sidebar
 st.sidebar.title('Filter')
