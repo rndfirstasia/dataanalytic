@@ -174,3 +174,133 @@ ax[2, 1].set_title('Distribusi Skor Agility')
 plt.tight_layout()
 st.pyplot(fig)
 st.text_area(label="Tambahkan Analisa:", key="agility_text_area")
+
+#Stage Facet - Stability
+st.title('Facet Stability')
+st.write("""
+Berikut adalah distribusi dari facet stability:
+""")
+
+fig, ax = plt.subplots(2, 2, figsize=(15, 10))
+
+sns.histplot(df['S1'], kde=True, ax=ax[0, 0])
+ax[0, 0].set_title('Distribusi Facet Worry')
+
+sns.histplot(df['S2'], kde=True, ax=ax[0, 1])
+ax[0, 1].set_title('Distribusi Facet Calmness')
+
+sns.histplot(df['S3'], kde=True, ax=ax[1, 0])
+ax[1, 0].set_title('Distribusi Facet Optimism')
+
+sns.histplot(df['S4'], kde=True, ax=ax[1, 1])
+ax[1, 1].set_title('Distribusi Facet Recovery')
+
+plt.tight_layout()
+st.pyplot(fig)
+st.text_area(label="Tambahkan Analisa:", key="stability_text_area")
+
+#Stage Facet - Tenacity
+st.title('Facet Tenacity')
+st.write("""
+Berikut adalah distribusi dari facet tenacity:
+""")
+
+fig, ax = plt.subplots(3, 2, figsize=(15, 10))
+
+sns.histplot(df['T1'], kde=True, ax=ax[0, 0])
+ax[0, 0].set_title('Distribusi Facet Excellence')
+
+sns.histplot(df['T2'], kde=True, ax=ax[0, 1])
+ax[0, 1].set_title('Distribusi Facet Systematic')
+
+sns.histplot(df['T3'], kde=True, ax=ax[1, 0])
+ax[1, 0].set_title('Distribusi Facet Achievement Drive')
+
+sns.histplot(df['T4'], kde=True, ax=ax[1, 1])
+ax[1, 1].set_title('Distribusi Facet Attentiveness')
+
+sns.histplot(df['T5'], kde=True, ax=ax[2, 0])
+ax[2, 0].set_title('Distribusi Facet Deliberation')
+
+ax[2, 1].remove()
+plt.tight_layout()
+st.pyplot(fig)
+st.text_area(label="Tambahkan Analisa:", key="tenacity_text_area")
+
+#Stage Facet - Adaptability
+st.title('Facet Adaptability')
+st.write("""
+Berikut adalah distribusi dari facet adaptability:
+""")
+
+fig, ax = plt.subplots(2, 2, figsize=(15, 10))
+
+sns.histplot(df['A1'], kde=True, ax=ax[0, 0])
+ax[0, 0].set_title('Distribusi Facet Altruism')
+
+sns.histplot(df['A2'], kde=True, ax=ax[0, 1])
+ax[0, 1].set_title('Distribusi Facet Compliance')
+
+sns.histplot(df['A3'], kde=True, ax=ax[1, 0])
+ax[1, 0].set_title('Distribusi Facet Modesty')
+
+sns.histplot(df['A4'], kde=True, ax=ax[1, 1])
+ax[1, 1].set_title('Distribusi Facet Assertiveness')
+
+plt.tight_layout()
+st.pyplot(fig)
+st.text_area(label="Tambahkan Analisa:", key="adaptability_text_area")
+
+#Stage Facet - Genuineness
+st.title('Facet Genuineness')
+st.write("""
+Berikut adalah distribusi dari facet genuineness:
+""")
+
+fig, ax = plt.subplots(2, 2, figsize=(15, 10))
+
+sns.histplot(df['G1'], kde=True, ax=ax[0, 0])
+ax[0, 0].set_title('Distribusi Facet Innovation')
+
+sns.histplot(df['G2'], kde=True, ax=ax[0, 1])
+ax[0, 1].set_title('Distribusi Facet Complexity')
+
+sns.histplot(df['G3'], kde=True, ax=ax[1, 0])
+ax[1, 0].set_title('Distribusi Facet Flexibility')
+
+sns.histplot(df['G4'], kde=True, ax=ax[1, 1])
+ax[1, 1].set_title('Distribusi Facet Wideness')
+
+plt.tight_layout()
+st.pyplot(fig)
+st.text_area(label="Tambahkan Analisa:", key="genuineness_text_area")
+
+#Stage Facet - Extraversion
+st.title('Facet Extraversion')
+st.write("""
+Berikut adalah distribusi dari facet extraversion:
+""")
+
+fig, ax = plt.subplots(3, 2, figsize=(15, 10))
+
+sns.histplot(df['E1'], kde=True, ax=ax[0, 0])
+ax[0, 0].set_title('Distribusi Facet Friendliness')
+
+sns.histplot(df['E2'], kde=True, ax=ax[0, 1])
+ax[0, 1].set_title('Distribusi Facet Gregariousness')
+
+sns.histplot(df['E3'], kde=True, ax=ax[1, 0])
+ax[1, 0].set_title('Distribusi Facet Energy')
+
+sns.histplot(df['E4'], kde=True, ax=ax[1, 1])
+ax[1, 1].set_title('Distribusi Facet Leading Incharge')
+
+sns.histplot(df['E5'], kde=True, ax=ax[2, 0])
+ax[1, 0].set_title('Distribusi Facet Trust')
+
+sns.histplot(df['E6'], kde=True, ax=ax[2, 1])
+ax[1, 1].set_title('Distribusi Facet Courtesy')
+
+plt.tight_layout()
+st.pyplot(fig)
+st.text_area(label="Tambahkan Analisa:", key="extraversion_text_area")
