@@ -9,7 +9,7 @@ import scipy.stats as stats
 #Layout
 st.set_page_config(page_title="Data Analytic", page_icon="icon.png")
 
-df = pd.read_excel('data.xlsx')
+df = pd.read_excel('/mount/src/dataanalytic/data.xlsx')
 
 #Sidebar
 st.sidebar.title('Filter')
