@@ -21,7 +21,14 @@ if uploaded_file is not None:
 st.sidebar.title('Filter')
 bins= [0,24,40,56,75, np.inf]
 labels = ['Gen Z', 'Milenials', 'Gen X', 'Baby Boomer', 'Silent']
-df['generasi'] = pd.cut(df['UMUR'], bins=bins, labels=labels, right=False)
+try:
+    df['generasi'] = pd.cut(df['UMUR'], bins=bins, labels=labels, right=False)
+except NameError:
+    # Mechanism
+    print("Anda harus melakukan upload data terlebih dahulu sebelum menjalankan analisis ini.")
+except Exception as e:
+    # Error Message
+    print("Terjadi kesalahan dalam proses analisis data. Silakan coba lagi atau hubungi admin.")
 selected_generations = st.sidebar.multiselect('Pilih generasi', labels, default=labels)
 df = df[df['generasi'].isin(selected_generations)]
 
