@@ -6,4 +6,4 @@ seaborn
 scipy
 openpyxl
 plost
-streamlit-gsheets
+st-gsheets-connection
