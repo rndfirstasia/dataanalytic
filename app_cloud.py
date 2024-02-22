@@ -5,15 +5,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
+import plost
+from streamlit_gsheets import GSheetsConnection
 
 #Layout
 st.set_page_config(page_title="Data Analytic", page_icon="icon.png")
 
-# File upload widget in Streamlit
-uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'])
+#df
+#df = pd.read_excel('data_leader.xlsx')
 
-if uploaded_file is not None:
-    df = pd.read_excel(uploaded_file)
+# File upload widget in Streamlit
+#uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'])
+
+#if uploaded_file is not None:
+    #df = pd.read_excel(uploaded_file)
+    # Now you can use the DataFrame 'df' as needed
+    #st.write(df)
+
+#conn
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+df = conn.read(worksheet="Sheet1")
 
 #Sidebar
 st.sidebar.title('Filter')
