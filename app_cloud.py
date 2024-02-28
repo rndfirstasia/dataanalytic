@@ -25,13 +25,10 @@ st.set_page_config(page_title="Data Analytic", page_icon="icon.png")
 #conn
 url = "https://docs.google.com/spreadsheets/d/1iHmbhpqlSssw6WCMCvbe6PeMED5pdgLee4CUqhCi318/edit?usp=sharing"
 
-conn = st.experimental_connection("gsheets", type=GSheetsConnection)
-
-data = conn.read(spreadsheet=url, usecols=[0, 1])
-st.dataframe(data)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-df = conn.read(worksheet="Sheet1")
+df = conn.read(spreadsheet=url, worksheet="569635382")
+st.dataframe(df)
 
 #Sidebar
 st.sidebar.title('Filter')
