@@ -8,13 +8,16 @@ import scipy.stats as stats
 import plost
 from streamlit_gsheets import GSheetsConnection
 
+#GLOBAL
 #Layout
 st.set_page_config(page_title="Data Analytic", page_icon="icon.png")
+#Hide warning
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 #df
-#df = pd.read_excel('data_leader.xlsx')
+df = pd.read_excel('data.xlsx')
 
-# File upload widget in Streamlit
+# File upload
 #uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'])
 
 #if uploaded_file is not None:
@@ -22,7 +25,10 @@ st.set_page_config(page_title="Data Analytic", page_icon="icon.png")
     # Now you can use the DataFrame 'df' as needed
     #st.write(df)
 
-#conn
+#gsheet
+#conn = st.connection("gsheets", type=GSheetsConnection)
+#df = conn.read(worksheet="Sheet1")
+
 url = "https://docs.google.com/spreadsheets/d/1iHmbhpqlSssw6WCMCvbe6PeMED5pdgLee4CUqhCi318/edit?usp=sharing"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -31,22 +37,74 @@ df = conn.read(spreadsheet=url, worksheet="569635382")
 st.dataframe(df)
 
 #Sidebar
-st.sidebar.title('Filter')
+#st.sidebar.title('Search & Filter')
+#st.sidebar.subheader('Filter:')
+#filter tanggal
+df['TGL TEST'] = pd.to_datetime(df['TGL TEST'])
+start_date = st.sidebar.date_input('Tanggal Mulai', value=pd.to_datetime('today') - pd.Timedelta(days=30))
+end_date = st.sidebar.date_input('Tanggal Akhir', value=pd.to_datetime('today'))
+df = df[(df['TGL TEST'].dt.date >= start_date) & (df['TGL TEST'].dt.date <= end_date)]
 bins= [0,24,40,56,75, np.inf]
-labels = ['Gen Z', 'Milenials', 'Gen X', 'Baby Boomer', 'Silent']
-df['generasi'] = pd.cut(df['UMUR'], bins=bins, labels=labels, right=False)
-selected_generations = st.sidebar.multiselect('Pilih generasi', labels, default=labels)
+labels_umur = ['Gen Z', 'Milenials', 'Gen X', 'Baby Boomer', 'Silent']
+df['generasi'] = pd.cut(df['UMUR'], bins=bins, labels=labels_umur, right=False)
+#Filter generasi
+selected_generations = st.sidebar.multiselect('Pilih Generasi', labels_umur, default=labels_umur)
 df = df[df['generasi'].isin(selected_generations)]
+#Filter Managerial & Non
+labels_mng = ['Managerial','Non Managerial']
+selected_managerial = st.sidebar.multiselect('Pilih Managerial/Non', labels_mng, default=labels_mng)
+df = df[df['MANAGERIAL'].isin(selected_managerial)]
+#Filter Job Family
+labels_fmly = ['Financial','Information Technology','Operation','People','Sales Marketing']
+selected_jobfam = st.sidebar.multiselect('Pilih Job Family', labels_fmly, default=labels_fmly)
+df = df[df['JOB FAMILY'].isin(selected_jobfam)]
 
-#Dataframe
+#st.sidebar.divider()
+#st.sidebar.subheader('Search:')
+# Search
+pilihan_klien_unik = pd.Series(df['KLIEN']).drop_duplicates().tolist()
+pilihan_nama_unik = pd.Series(df['NAMA']).drop_duplicates().tolist()
+
+selected_kliens = st.sidebar.multiselect('Pilih Klien', pilihan_klien_unik)
+
+if selected_kliens:
+    df = df[df['KLIEN'].isin(selected_kliens)]
+else:
+    st.sidebar.write('Tidak ada klien yang dipilih')
+
+selected_namas = st.sidebar.multiselect('Pilih Nama peserta', pilihan_nama_unik)
+
+if selected_namas:
+    df = df[df['NAMA'].isin(selected_namas)]
+else:
+    st.sidebar.write('Tidak ada nama yang dipilih')
+
+#Dataframe Tertampil
 st.title('Data Tarikan')
+st.markdown('Data yang dimunculkan dapat dirubah sesuai dengan filter yang diinginkan')
+st.markdown('Default tanggal adalah satu bulan dan filter generasi disesuaikan dengan umur tahun sekarang (bukan tahun dia tes).')
+st.markdown('Filter Generasi dibagi menjadi')
+kategori_umur = {
+  "Generasi": ["Gen Z", "Milenials", "Gen X", "Baby Boomer", "Silent"],
+  "Rentang Tahun Lahir": ["Mid-1990s hingga Early-2010s", "Early-1980s hingga Mid-1990s", "Early-1960s hingga Late-1970s", "Mid-1940s hingga Early-1960s", "Early-1920s hingga Mid-1940s"],
+  "Kategori Umur (per 2024)": ["14 - 29 tahun", "29 - 44 tahun", "45 - 64 tahun", "64 - 80 tahun", "80+ tahun"]
+}
+kategori_umur_df = pd.DataFrame(kategori_umur)
+st.table(kategori_umur_df)
 df
 
 def get_median(series):
     return np.median(series)
 
 def get_mode(series):
+    series = np.asarray(series.dropna()) if hasattr(series, 'dropna') else np.asarray(series)
+    if series.size == 0:
+        return None
+
     values, counts = np.unique(series, return_counts=True)
+    if counts.size == 0:
+        return None
+      
     index = np.argmax(counts)
     return values[index]
 
@@ -63,7 +121,14 @@ def get_range(series):
     return np.ptp(series)
 
 def get_quartiles(series):
-    return np.percentile(series, [25, 50, 75])
+    series_clean = np.asarray(series.dropna()) if hasattr(series, 'dropna') else np.asarray(series)
+    
+    if series_clean.size == 0:
+        return None, None, None
+    
+    # Calculate percentiles
+    quartiles = np.percentile(series_clean, [25, 50, 75])
+    return quartiles 
 
 def get_skewness(series):
     n = len(series)
@@ -100,6 +165,44 @@ st.write(len(df))
 
 st.table(desc_df)
 
+#Jenis Kelamin
+st.subheader('Jenis Kelamin')
+
+distribusi = df['J/K'].value_counts().rename(index={'L': 'Laki-laki', 'P': 'Perempuan'})
+
+def func(pct, allvalues):
+    absolute = int(pct/100.*np.sum(allvalues))
+    return "{:.1f}%\n({:d})".format(pct, absolute)
+
+plt.figure(figsize=(8, 6))
+plt.pie(distribusi, labels=distribusi.index, colors=sns.color_palette('pastel'), autopct=lambda pct: func(pct, distribusi), startangle=140)
+
+#centre_circle = plt.Circle((0,0),0.70,fc='white')
+#fig = plt.gcf()
+#fig.gca().add_artist(centre_circle)
+
+plt.title('Distribusi Jenis Kelamin')
+plt.tight_layout()
+st.pyplot(plt)
+
+#Kesimpulan
+map_kesimpulan = {'Dapat Disarankan': 4, 'Dapat Potensial': 4, 'Dapat Sesuai': 4,
+               'Cukup Disarankan': 3, 'Cukup Potensial': 3, 'Cukup Sesuai': 3,
+               'Kurang Disarankan': 2, 'Kurang Potensial': 2, 'Kurang Sesuai': 2,
+               'Tidak Disarankan': 1, 'Tidak Potensial': 1, 'Tidak Sesuai': 1}
+
+df['KESIMPULAN'] = df['KESIMPULAN'].replace(map_kesimpulan)
+check = df['KESIMPULAN']
+
+count_df = df['KESIMPULAN'].value_counts().sort_index()
+percent_df = df['KESIMPULAN'].value_counts(normalize=True).sort_index() * 100
+
+plt.figure(figsize=(10, 7))
+plt.pie(count_df, labels=['Tidak Rekomendasi (1)', 'Kurang Rekomendasi (2)', 'Cukup Rekomendasi (3)', 'Rekomendasi (4)'],autopct='%1.1f%%', startangle=140)
+
+plt.title('Distribusi Kesimpulan')
+st.pyplot(plt)
+
 #IQ
 st.title('Graph Distribusi IQ')
 st.write("""
@@ -114,14 +217,37 @@ Histogram ini akan menampilkan frekuensi skor IQ setelah dilakukan penyesuaian o
 Histogram ini menampilkan frekuensi dari skor IQ asli tanpa penyesuaian, yang berasal langsung dari hasil tes peserta. Skor ini mencerminkan performa individu berdasarkan kriteria dan standar tes yang telah ditetapkan, tanpa memasukkan koreksi atau penilaian tambahan dari seorang assessor.
 """)
 
-fig, ax = plt.subplots(1,2)
-sns.histplot(df['IQ'], kde=True, ax=ax[0])
-ax[0].set_title('IQ')
+def iq_category(iq):
+    if iq > 130:
+        return 'Very Superior'
+    elif iq >= 120 and iq <= 129:
+        return 'Superior'
+    elif iq >= 110 and iq <= 119:
+        return 'High Average'
+    elif iq >= 90 and iq <= 109:
+        return 'Average'
+    elif iq >= 80 and iq <= 89:
+        return 'Low Average'
+    elif iq >= 70 and iq <= 79:
+        return 'Borderline'
+    else:
+        return 'Extremely Low'
 
-sns.histplot(df['IQOri'], kde=True, ax=ax[1])
-ax[1].set_title('IQ Ori')
+df['IQCategory'] = df['IQOri'].apply(iq_category)
+all_iq_categories = ['Extremely Low', 'Borderline', 'Low Average', 'Average', 'High Average', 'Superior', 'Very Superior']
+category_iq_counts = df['IQCategory'].value_counts().reindex(all_iq_categories, fill_value=0)
+
+count_iq = pd.DataFrame({'IQ LEVEL': all_iq_categories, 'Count': category_iq_counts})
+
+fig, ax = plt.subplots()
+ax.bar(count_iq['IQ LEVEL'], count_iq['Count'])
+ax.set_xlabel('IQ Category')
+ax.set_ylabel('Count')
+ax.set_title('IQ Distribution by Wechsler Scale')
+plt.xticks(rotation=45, ha='right')
 
 st.pyplot(fig)
+
 st.text_area(label="Tambahkan Analisa:", key="iq_text_area")
 
 #STAGE
@@ -138,27 +264,59 @@ Analisis histogram kepribadian STAGE memperlihatkan bagaimana skor individu berd
 Dengan membandingkan histogram-histogram ini, kita dapat menggambarkan variasi dalam lima aspek kunci STAGE dalam database.
 """)
 
-fig, ax = plt.subplots(3, 2, figsize=(15, 10))
+df_stage_profil = df[['S_Trait', 'T_Trait', 'A_Trait', 'G_Trait', 'E_Trait']]
 
-sns.histplot(df['S'], kde=True, ax=ax[0, 0])
-ax[0, 0].set_title('Distribusi S')
+freq_dfs = []
+total_counts = df_stage_profil.count() 
+for trait in df_stage_profil.columns:
+    freq_series = df_stage_profil[trait].value_counts(normalize=True) * 100
+    raw_counts = df_stage_profil[trait].value_counts()  
+    freq_df = freq_series.reset_index()
+    freq_df['Count'] = freq_df['index'].apply(lambda x: raw_counts[x])  
+    freq_df.columns = ['Value', 'Percentage', 'Count']
+    freq_df['Trait'] = trait
+    freq_dfs.append(freq_df)
 
-sns.histplot(df['T'], kde=True, ax=ax[0, 1])
-ax[0, 1].set_title('Distribusi T')
+final_df = pd.concat(freq_dfs)
 
-sns.histplot(df['A'], kde=True, ax=ax[1, 0])
-ax[1, 0].set_title('Distribusi A')
+traits = df_stage_profil.columns.tolist()
+values = final_df['Value'].unique()
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 
-sns.histplot(df['G'], kde=True, ax=ax[1, 1])
-ax[1, 1].set_title('Distribusi G')
+fig, ax = plt.subplots(figsize=(10, 8))
 
-sns.histplot(df['E'], kde=True, ax=ax[2, 0])
-ax[2, 0].set_title('Distribusi E')
+starts = {trait: 0 for trait in traits}
 
-ax[2, 1].remove()
+for index, value in enumerate(values):
+    percentages = []
+    raw_counts = []
+    for trait in traits:
+        df_subset = final_df[(final_df['Trait'] == trait) & (final_df['Value'] == value)]
+        if df_subset.empty:
+            percentages.append(0)
+            raw_counts.append(0)
+        else:
+            percentages.append(df_subset['Percentage'].values[0])
+            raw_counts.append(df_subset['Count'].values[0])
+
+    color = colors[index % len(colors)]
+    bars = ax.barh(traits, percentages, left=[starts[trait] for trait in traits], color=color, label=value if index < len(colors) else "")
+
+    for i, trait in enumerate(traits):
+        starts[trait] += percentages[i]
+        if percentages[i] > 0:  
+            ax.annotate(f"{percentages[i]:.2f}%\n({raw_counts[i]})",
+                        xy=(starts[trait] - percentages[i] / 2, i),
+                        xytext=(0, 0),  
+                        textcoords="offset points",
+                        ha='center', va='center',
+                        color='black', fontsize=8)
+
+ax.set_xlabel('Percentage')
+ax.set_title('Simplified Traits Distribution with Annotations')
+
 plt.tight_layout()
-st.pyplot(fig)
-st.text_area(label="Tambahkan Analisa:", key="stage_text_area")
+st.pyplot(plt)
 
 #Agility
 st.title('Agility Index')
@@ -166,29 +324,64 @@ st.write("""
 Agility (ketangkasan) adalah kemampuan untuk memahami keadaan dengan cepat dan beradaptasi atau menyesuaikan diri secara efektif di dalamnya. Semakin tinggi Agility Index seseorang, menunjukkan kemudahan bagi dirinya untuk mengatasi kondisi yang dinamis di pekerjaan dan perusahaan.
 """)
 
-fig, ax = plt.subplots(3, 2, figsize=(15, 10))
+df_agility = df[["People Agility", "Mental Agility", "Self-Awareness", "Result Agility", "Change Agility"]]
 
-sns.histplot(df['People Agility'], kde=True, ax=ax[0, 0])
-ax[0, 0].set_title('Distribusi People Agi')
+def calculate_counts(column):
+    low_count = (column == 0).sum()
+    medium_count = (column == 1).sum()
+    high_count = (column == 2).sum()
+    return low_count, medium_count, high_count
 
-sns.histplot(df['Mental Agility'], kde=True, ax=ax[0, 1])
-ax[0, 1].set_title('Distribusi Mental Agi')
+count_agility = []
 
-sns.histplot(df['Self-Awareness'], kde=True, ax=ax[1, 0])
-ax[1, 0].set_title('Distribusi Self-Awareness')
+for column_name in df_agility:
+    counts = calculate_counts(df_agility[column_name])
+    count_agility.append([column_name] + list(counts))
 
-sns.histplot(df['Result Agility'], kde=True, ax=ax[1, 1])
-ax[1, 1].set_title('Distribusi Result Agi')
+count_agility_df = pd.DataFrame(count_agility, columns=['Agility Type', 'Low', 'Medium', 'High'])
 
-sns.histplot(df['Change Agility'], kde=True, ax=ax[2, 0])
-ax[2, 0].set_title('Distribusi Change Agi')
+melted_df = count_agility_df.melt(id_vars=["Agility Type"], var_name="Agility Level", value_name="Count")
 
-sns.histplot(df['Agility Profile Score'], kde=True, ax=ax[2, 1])
-ax[2, 1].set_title('Distribusi Skor Agility')
+plt.figure(figsize=(10, 6)) 
+sns.barplot(x='Agility Type', y='Count', hue='Agility Level', data=melted_df)
 
-plt.tight_layout()
-st.pyplot(fig)
-st.text_area(label="Tambahkan Analisa:", key="agility_text_area")
+plt.title('Agility Comparison')  
+plt.xticks(rotation=45)  
+plt.tight_layout()  
+st.pyplot(plt)
+
+# Agility Level
+count_agility_level = df['AGILITY LEVEL'].value_counts()
+count_agility_level_df = pd.DataFrame(count_agility_level).reset_index()
+count_agility_level_df.columns = ['AGILITY LEVEL', 'Count']
+
+order = ['L', 'M', 'H']
+
+st.subheader('Agility Level')
+
+plt.figure(figsize=(10, 6))
+sns.barplot(data=count_agility_level_df, x='AGILITY LEVEL', y='Count', order=order)
+plt.title('Agility Level')
+plt.xlabel('AGILITY LEVEL')
+plt.ylabel('Count')
+st.pyplot(plt)
+
+#Stage
+st.title('STAGE')
+st.write("""
+Berikut adalah distribusi dari STAGE:
+""")
+plt.figure(figsize=(10, 8))
+sns.kdeplot(df['S'], label='Stability')
+sns.kdeplot(df['T'], label='Tenacity')
+sns.kdeplot(df['A'], label='Adaptability')
+sns.kdeplot(df['G'], label='Genuineness')
+sns.kdeplot(df['E'], label='Extraversion')
+plt.title('Distribusi Data STAGE')
+plt.xlabel('T Score')
+plt.ylabel('Frekuensi')
+plt.legend()
+st.pyplot(plt)
 
 #Stage Facet - Stability
 st.title('Facet Stability')
@@ -196,23 +389,17 @@ st.write("""
 Berikut adalah distribusi dari facet stability:
 """)
 
-fig, ax = plt.subplots(2, 2, figsize=(15, 10))
-
-sns.histplot(df['S1'], kde=True, ax=ax[0, 0])
-ax[0, 0].set_title('Distribusi Facet Worry')
-
-sns.histplot(df['S2'], kde=True, ax=ax[0, 1])
-ax[0, 1].set_title('Distribusi Facet Calmness')
-
-sns.histplot(df['S3'], kde=True, ax=ax[1, 0])
-ax[1, 0].set_title('Distribusi Facet Optimism')
-
-sns.histplot(df['S4'], kde=True, ax=ax[1, 1])
-ax[1, 1].set_title('Distribusi Facet Recovery')
-
-plt.tight_layout()
-st.pyplot(fig)
-st.text_area(label="Tambahkan Analisa:", key="stability_text_area")
+plt.figure(figsize=(10, 8))
+sns.kdeplot(df['S1'], label='Worry')
+sns.kdeplot(df['S2'], label='Calmness')
+sns.kdeplot(df['S3'], label='Optimism')
+sns.kdeplot(df['S4'], label='Recovery')
+plt.title('Distribusi Data Facet S')
+plt.xlabel('T Score')
+plt.ylabel('Frekuensi')
+plt.legend()
+plt.show()
+st.pyplot(plt)
 
 #Stage Facet - Tenacity
 st.title('Facet Tenacity')
@@ -220,27 +407,18 @@ st.write("""
 Berikut adalah distribusi dari facet tenacity:
 """)
 
-fig, ax = plt.subplots(3, 2, figsize=(15, 10))
-
-sns.histplot(df['T1'], kde=True, ax=ax[0, 0])
-ax[0, 0].set_title('Distribusi Facet Excellence')
-
-sns.histplot(df['T2'], kde=True, ax=ax[0, 1])
-ax[0, 1].set_title('Distribusi Facet Systematic')
-
-sns.histplot(df['T3'], kde=True, ax=ax[1, 0])
-ax[1, 0].set_title('Distribusi Facet Achievement Drive')
-
-sns.histplot(df['T4'], kde=True, ax=ax[1, 1])
-ax[1, 1].set_title('Distribusi Facet Attentiveness')
-
-sns.histplot(df['T5'], kde=True, ax=ax[2, 0])
-ax[2, 0].set_title('Distribusi Facet Deliberation')
-
-ax[2, 1].remove()
-plt.tight_layout()
-st.pyplot(fig)
-st.text_area(label="Tambahkan Analisa:", key="tenacity_text_area")
+plt.figure(figsize=(10, 8))
+sns.kdeplot(df['T1'], label='Excellence')
+sns.kdeplot(df['T2'], label='Systematic')
+sns.kdeplot(df['T3'], label='Achievement Drive')
+sns.kdeplot(df['T4'], label='Attentiveness')
+sns.kdeplot(df['T5'], label='Deliberation')
+plt.title('Distribusi Data Facet T')
+plt.xlabel('T Score')
+plt.ylabel('Frekuensi')
+plt.legend()
+plt.show()
+st.pyplot(plt)
 
 #Stage Facet - Adaptability
 st.title('Facet Adaptability')
@@ -248,23 +426,16 @@ st.write("""
 Berikut adalah distribusi dari facet adaptability:
 """)
 
-fig, ax = plt.subplots(2, 2, figsize=(15, 10))
-
-sns.histplot(df['A1'], kde=True, ax=ax[0, 0])
-ax[0, 0].set_title('Distribusi Facet Altruism')
-
-sns.histplot(df['A2'], kde=True, ax=ax[0, 1])
-ax[0, 1].set_title('Distribusi Facet Compliance')
-
-sns.histplot(df['A3'], kde=True, ax=ax[1, 0])
-ax[1, 0].set_title('Distribusi Facet Modesty')
-
-sns.histplot(df['A4'], kde=True, ax=ax[1, 1])
-ax[1, 1].set_title('Distribusi Facet Assertiveness')
-
-plt.tight_layout()
-st.pyplot(fig)
-st.text_area(label="Tambahkan Analisa:", key="adaptability_text_area")
+plt.figure(figsize=(10, 8))
+sns.kdeplot(df['A1'], label='Altruism')
+sns.kdeplot(df['A2'], label='Compliance')
+sns.kdeplot(df['A3'], label='Modesty')
+sns.kdeplot(df['A4'], label='Assertiveness')
+plt.title('Distribusi Data Facet T')
+plt.xlabel('T Score')
+plt.ylabel('Frekuensi')
+plt.legend()
+st.pyplot(plt)
 
 #Stage Facet - Genuineness
 st.title('Facet Genuineness')
@@ -272,23 +443,16 @@ st.write("""
 Berikut adalah distribusi dari facet genuineness:
 """)
 
-fig, ax = plt.subplots(2, 2, figsize=(15, 10))
-
-sns.histplot(df['G1'], kde=True, ax=ax[0, 0])
-ax[0, 0].set_title('Distribusi Facet Innovation')
-
-sns.histplot(df['G2'], kde=True, ax=ax[0, 1])
-ax[0, 1].set_title('Distribusi Facet Complexity')
-
-sns.histplot(df['G3'], kde=True, ax=ax[1, 0])
-ax[1, 0].set_title('Distribusi Facet Flexibility')
-
-sns.histplot(df['G4'], kde=True, ax=ax[1, 1])
-ax[1, 1].set_title('Distribusi Facet Wideness')
-
-plt.tight_layout()
-st.pyplot(fig)
-st.text_area(label="Tambahkan Analisa:", key="genuineness_text_area")
+plt.figure(figsize=(10, 8))
+sns.kdeplot(df['G1'], label='Innovation')
+sns.kdeplot(df['G2'], label='Complexity')
+sns.kdeplot(df['G3'], label='Flexibility')
+sns.kdeplot(df['G4'], label='Wideness')
+plt.title('Distribusi Data Facet G')
+plt.xlabel('T Score')
+plt.ylabel('Frekuensi')
+plt.legend()
+st.pyplot(plt)
 
 #Stage Facet - Extraversion
 st.title('Facet Extraversion')
@@ -296,26 +460,54 @@ st.write("""
 Berikut adalah distribusi dari facet extraversion:
 """)
 
-fig, ax = plt.subplots(3, 2, figsize=(15, 10))
+plt.figure(figsize=(10, 8))
+sns.kdeplot(df['E1'], label='Friendliness')
+sns.kdeplot(df['E2'], label='Gregariousness')
+sns.kdeplot(df['E3'], label='Energy')
+sns.kdeplot(df['E4'], label='Leading Incharge')
+sns.kdeplot(df['E5'], label='Trust')
+sns.kdeplot(df['E6'], label='Courtesy')
+plt.title('Distribusi Data Facet E')
+plt.xlabel('T Score')
+plt.ylabel('Frekuensi')
+plt.legend()
+st.pyplot(plt)
 
-sns.histplot(df['E1'], kde=True, ax=ax[0, 0])
-ax[0, 0].set_title('Distribusi Facet Friendliness')
+#Kompetensi
+st.title('Kompetensi-kompetensi')
+st.markdown('Catatan: niatnya sih nanti mau dibandingin kaya kalau lagi pilih pemain di winning, tapi lihat dulu, jadi sementara seperti ini')
 
-sns.histplot(df['E2'], kde=True, ax=ax[0, 1])
-ax[0, 1].set_title('Distribusi Facet Gregariousness')
+df_komp = df[['Action Orientation','Obedience','Comfort with Ambiguity','Ambition','Analytical Thinking','Leadership','Business Acumen','Competitiveness','Creativity','Customer Service Orientation','Decision-Making Skills','Delegation','Development of Personel','Diplomacy','Tolerance with Diversity','Entrepreneurship','Conflict Management','Flexibility','Persistance','Visionary','Assessing','Independence','Informing Others','Innovation','Accuracy','Listening','Managing Through System','Facilitating','Talent Developing','Objectivity','Optimism','Organization','Comfort with repetitif work','Performance Focus','Planning','Political Savvy','Quality Orientation','Range of Perspective and Interests','Dependability','Responsibility','Risk Taking','Carefullness','Sales Orientation','Self Confidence','Self Control','Self Development','Teamwork and Cooperation','Technical Learning','Work/Life Balance']]
 
-sns.histplot(df['E3'], kde=True, ax=ax[1, 0])
-ax[1, 0].set_title('Distribusi Facet Energy')
+def create_radar_chart(ax, angles, values, labels, category_labels, plt):
+    values += values[:1]
+    angles += angles[:1]  
+    ax.plot(angles, values, linewidth=1, linestyle='solid')
+    ax.fill(angles, values, 'b', alpha=0.1)
+    ax.set_xticks(angles[:-1])  
+    ax.set_xticklabels(category_labels)
+    
+n_kompetensi = len(df_komp.columns)  
+n_cols = 3  
+n_rows = n_kompetensi // n_cols + (n_kompetensi % n_cols > 0)  
 
-sns.histplot(df['E4'], kde=True, ax=ax[1, 1])
-ax[1, 1].set_title('Distribusi Facet Leading Incharge')
+fig, axes = plt.subplots(figsize=(n_cols * 4, n_rows * 3), nrows=n_rows, ncols=n_cols, subplot_kw=dict(polar=True))
+fig.subplots_adjust(hspace=0.5, wspace=0.5)  
 
-sns.histplot(df['E5'], kde=True, ax=ax[2, 0])
-ax[1, 0].set_title('Distribusi Facet Trust')
+categories = ['VH', 'H', 'M', 'L', 'VL']
+labels = np.array(categories)
 
-sns.histplot(df['E6'], kde=True, ax=ax[2, 1])
-ax[1, 1].set_title('Distribusi Facet Courtesy')
+for i, (ax, column) in enumerate(zip(axes.flatten(), df_komp.columns)):
+    
+    frekuensi = df_komp[column].value_counts().reindex(categories, fill_value=0)
+    values = frekuensi.values.flatten().tolist()
 
-plt.tight_layout()
-st.pyplot(fig)
-st.text_area(label="Tambahkan Analisa:", key="extraversion_text_area")
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+
+    create_radar_chart(ax, angles, values, labels, categories, plt)
+    ax.set_title(column, size=11, color='red', y=1.1)
+
+for i in range(n_kompetensi, n_rows * n_cols):
+    fig.delaxes(axes.flatten()[i])
+
+st.pyplot(plt)
