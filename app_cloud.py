@@ -15,7 +15,7 @@ st.set_page_config(page_title="Data Analytic", page_icon="icon.png")
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 #df
-df = pd.read_excel('data.xlsx')
+#df = pd.read_excel('data.xlsx')
 
 # File upload
 #uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'])
