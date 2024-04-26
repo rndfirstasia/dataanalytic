@@ -37,8 +37,8 @@ df = conn.read(spreadsheet=url, worksheet="569635382")
 st.dataframe(df)
 
 #Sidebar
-#st.sidebar.title('Search & Filter')
-#st.sidebar.subheader('Filter:')
+st.sidebar.title('Search & Filter')
+st.sidebar.subheader('Filter:')
 #filter tanggal
 df['TGL TEST'] = pd.to_datetime(df['TGL TEST'])
 start_date = st.sidebar.date_input('Tanggal Mulai', value=pd.to_datetime('today') - pd.Timedelta(days=30))
