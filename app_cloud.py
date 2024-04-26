@@ -44,8 +44,8 @@ df['TGL TEST'] = pd.to_datetime(df['TGL TEST'])
 start_date = st.sidebar.date_input('Tanggal Mulai', value=pd.to_datetime('today') - pd.Timedelta(days=30))
 end_date = st.sidebar.date_input('Tanggal Akhir', value=pd.to_datetime('today'))
 df = df[(df['TGL TEST'].dt.date >= start_date) & (df['TGL TEST'].dt.date <= end_date)]
-bins= [0,24,40,56,75, np.inf]
-labels_umur = ['Gen Z', 'Milenials', 'Gen X', 'Baby Boomer', 'Silent']
+bins= [0,10,27,43,59,78, np.inf]
+labels_umur = ['Alpha','Gen Z', 'Milenials', 'Gen X', 'Baby Boomer', 'Silent']
 df['generasi'] = pd.cut(df['UMUR'], bins=bins, labels=labels_umur, right=False)
 #Filter generasi
 selected_generations = st.sidebar.multiselect('Pilih Generasi', labels_umur, default=labels_umur)
@@ -83,11 +83,11 @@ else:
 st.title('Data Tarikan')
 st.markdown('Data yang dimunculkan dapat dirubah sesuai dengan filter yang diinginkan')
 st.markdown('Default tanggal adalah satu bulan dan filter generasi disesuaikan dengan umur tahun sekarang (bukan tahun dia tes).')
-st.markdown('Filter Generasi dibagi menjadi')
+st.markdown('Menurut Wikipedia Generasi dibagi menjadi')
 kategori_umur = {
-  "Generasi": ["Gen Z", "Milenials", "Gen X", "Baby Boomer", "Silent"],
-  "Rentang Tahun Lahir": ["Mid-1990s hingga Early-2010s", "Early-1980s hingga Mid-1990s", "Early-1960s hingga Late-1970s", "Mid-1940s hingga Early-1960s", "Early-1920s hingga Mid-1940s"],
-  "Kategori Umur (per 2024)": ["14 - 29 tahun", "29 - 44 tahun", "45 - 64 tahun", "64 - 80 tahun", "80+ tahun"]
+  "Generasi": ["Alpha", "Gen Z", "Milenials", "Gen X", "Baby Boomer", "Silent"],
+  "Rentang Tahun Lahir": ["< 2013", "2013 - 1997", "1996 - 1981", "1965 - 1980", "1964 - 1946", "1945 - 1928"],
+  "Kategori Umur (per 2024)": ["< 10 tahun", "11 - 27 tahun", "28 - 43 tahun", "44 - 59 tahun", "60 - 78 tahun", "79+ tahun"]
 }
 kategori_umur_df = pd.DataFrame(kategori_umur)
 st.table(kategori_umur_df)
