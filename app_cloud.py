@@ -44,7 +44,7 @@ df['TGL TEST'] = pd.to_datetime(df['TGL TEST'])
 start_date = st.sidebar.date_input('Tanggal Mulai', value=pd.to_datetime('today') - pd.Timedelta(days=30))
 end_date = st.sidebar.date_input('Tanggal Akhir', value=pd.to_datetime('today'))
 df = df[(df['TGL TEST'].dt.date >= start_date) & (df['TGL TEST'].dt.date <= end_date)]
-bins= [0,10,27,43,59,78, np.inf]
+bins= [0,11,28,44,60,79, np.inf]
 labels_umur = ['Alpha','Gen Z', 'Milenials', 'Gen X', 'Baby Boomer', 'Silent']
 df['generasi'] = pd.cut(df['UMUR'], bins=bins, labels=labels_umur, right=False)
 #Filter generasi
